@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Survival → Stability Finance System</title>
+<title>Survival → Stability System (Safe)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body {
@@ -39,7 +39,10 @@ button {
 <body>
 
 <h1>💸 Survival → Stability System</h1>
-<p class="small">Daily log • Cloud backup • Next-day guidance</p>
+<p class="small">
+Safe storage • Cloud backup • Next-day guidance  
+<br>(Does NOT touch other GitHub projects)
+</p>
 
 <div class="box">
 <h3>📅 Daily Entry</h3>
@@ -86,19 +89,29 @@ button {
 </div>
 
 <script>
-/* ==== CONFIG ==== */
+/* ================= CONFIG ================= */
+
 const CLOUD_URL =
 "https://script.google.com/macros/s/AKfycbycZmT_n66WVFc4t3CFyo7UM7mQg1BGeKHbcE04wH3o4waopuTvcJ44JCkDloMqOyuFtg/exec";
 
-/* ==== LOCAL MEMORY ==== */
-let history = JSON.parse(localStorage.getItem("financeHistory")) || [];
+/*
+  🔐 SAFE STORAGE KEY
+  This key is UNIQUE to this system.
+  It will NOT affect any other GitHub project.
+*/
+const STORAGE_KEY = "financeHistory_survival_feb2026_v1";
 
-/* ==== NEXT DAY GUIDE ==== */
+/* ================= LOCAL MEMORY ================= */
+
+let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+/* ================= NEXT DAY GUIDE ================= */
+
 function nextDayGuide(last) {
   let g = "<div class='alert yellow'>📅 NEXT DAY GUIDANCE</div>";
 
   if (last.mood !== "ok") {
-    g += "<div class='alert red'>❌ NO TRADING tomorrow. Focus on rest.</div>";
+    g += "<div class='alert red'>❌ NO TRADING tomorrow. Rest first.</div>";
   } else {
     g += "<div class='alert green'>✅ Trading allowed (strict discipline).</div>";
   }
@@ -106,18 +119,19 @@ function nextDayGuide(last) {
   if (last.totalExpense > 500) {
     g += "<div class='alert red'>⚠️ Expense high today. Tomorrow limit = ₹400.</div>";
   } else {
-    g += "<div class='alert green'>👍 Expense under control. Tomorrow limit = ₹400–500.</div>";
+    g += "<div class='alert green'>👍 Expense controlled. Tomorrow limit = ₹400–500.</div>";
   }
 
   if ((last.withdraw - last.totalExpense) <= 0) {
-    g += "<div class='alert red'>🛑 Balance tight. Tomorrow essentials only.</div>";
+    g += "<div class='alert red'>🛑 Balance tight. Essentials only tomorrow.</div>";
   }
 
   g += "<div class='alert'>🎯 Rule: Survival > Profit</div>";
   return g;
 }
 
-/* ==== MAIN ANALYSIS ==== */
+/* ================= MAIN LOGIC ================= */
+
 function analyze() {
 
   const month = monthEl.value;
@@ -138,32 +152,33 @@ function analyze() {
   };
 
   history.push(entry);
-  localStorage.setItem("financeHistory", JSON.stringify(history));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 
   const totalWithdraw = history.reduce((a,b)=>a+b.withdraw,0);
   const totalExpenseAll = history.reduce((a,b)=>a+b.totalExpense,0);
   const netBalance = totalWithdraw - totalExpenseAll;
 
-  /* ---- CLOUD SAVE ---- */
+  /* ---- CLOUD BACKUP ---- */
   fetch(CLOUD_URL, {
-    method:"POST",
-    body:JSON.stringify({
+    method: "POST",
+    body: JSON.stringify({
       ...entry,
       netBalance
     })
   });
 
-  /* ---- UI MESSAGE ---- */
+  /* ---- UI OUTPUT ---- */
   let msg = "";
-  msg += "<div class='alert green'>💾 Saved locally & to Google Sheet</div>";
+  msg += "<div class='alert green'>💾 Saved safely (local + Google Sheet)</div>";
   msg += `<div class='alert'>📊 Total Withdraw: ₹${totalWithdraw}</div>`;
   msg += `<div class='alert'>💸 Total Expense: ₹${totalExpenseAll}</div>`;
   msg += `<div class='alert'>🧮 Net Balance: ₹${netBalance}</div>`;
 
   if (month === "February" || month === "March") {
     msg += "<div class='alert yellow'>🟡 SURVIVAL MODE ACTIVE</div>";
-    if (totalExpense > 500)
+    if (totalExpense > 500) {
       msg += "<div class='alert red'>⚠️ Daily limit crossed today.</div>";
+    }
   }
 
   if (month === "August+") {
@@ -174,7 +189,8 @@ function analyze() {
   result.innerHTML = msg;
 }
 
-/* ==== ELEMENT SHORTCUTS ==== */
+/* ================= ELEMENT SHORTCUTS ================= */
+
 const monthEl = document.getElementById("month");
 const salaryEl = document.getElementById("salary");
 const withdrawEl = document.getElementById("withdraw");
@@ -183,6 +199,7 @@ const travelEl = document.getElementById("travel");
 const otherEl = document.getElementById("other");
 const moodEl = document.getElementById("mood");
 const result = document.getElementById("result");
+
 </script>
 
 </body>
