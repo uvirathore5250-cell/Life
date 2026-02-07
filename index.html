@@ -18,49 +18,31 @@ h1 { color: #38bdf8; }
   margin-bottom: 15px;
   border-radius: 10px;
 }
-label {
-  display: block;
-  margin-top: 8px;
-}
+label { display:block; margin-top:8px; }
 input, select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 6px;
-  border: none;
+  width:100%; padding:8px; margin-top:5px;
+  border-radius:6px; border:none;
 }
 button {
-  margin-top: 15px;
-  padding: 10px;
-  width: 100%;
-  background: #22c55e;
-  color: black;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
+  margin-top:15px; padding:12px; width:100%;
+  background:#22c55e; color:black;
+  font-size:16px; border:none; border-radius:8px;
 }
-.alert {
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-.green { background: #16a34a; }
-.yellow { background: #ca8a04; }
-.red { background: #dc2626; }
-.small {
-  font-size: 14px;
-  color: #9ca3af;
-}
+.alert { padding:12px; margin-top:10px; border-radius:8px; }
+.green { background:#16a34a; }
+.yellow { background:#ca8a04; }
+.red { background:#dc2626; }
+.small { font-size:13px; color:#9ca3af; }
 </style>
 </head>
 
 <body>
 
 <h1>💸 Survival → Stability System</h1>
-<p class="small">Cloud + Local Memory | Feb–March Survival | August Stability</p>
+<p class="small">Daily log • Cloud backup • Next-day guidance</p>
 
 <div class="box">
-<h3>📅 Daily Input</h3>
+<h3>📅 Daily Entry</h3>
 
 <label>Month</label>
 <select id="month">
@@ -95,7 +77,7 @@ button {
   <option>stressed</option>
 </select>
 
-<button onclick="analyze()">Analyze & Save</button>
+<button onclick="analyze()">Analyze • Save • Guide</button>
 </div>
 
 <div class="box">
@@ -104,54 +86,76 @@ button {
 </div>
 
 <script>
-const CLOUD_URL = "https://script.google.com/macros/s/AKfycbycZmT_n66WVFc4t3CFyo7UM7mQg1BGeKHbcE04wH3o4waopuTvcJ44JCkDloMqOyuFtg/exec";
+/* ==== CONFIG ==== */
+const CLOUD_URL =
+"https://script.google.com/macros/s/AKfycbycZmT_n66WVFc4t3CFyo7UM7mQg1BGeKHbcE04wH3o4waopuTvcJ44JCkDloMqOyuFtg/exec";
 
+/* ==== LOCAL MEMORY ==== */
 let history = JSON.parse(localStorage.getItem("financeHistory")) || [];
 
+/* ==== NEXT DAY GUIDE ==== */
+function nextDayGuide(last) {
+  let g = "<div class='alert yellow'>📅 NEXT DAY GUIDANCE</div>";
+
+  if (last.mood !== "ok") {
+    g += "<div class='alert red'>❌ NO TRADING tomorrow. Focus on rest.</div>";
+  } else {
+    g += "<div class='alert green'>✅ Trading allowed (strict discipline).</div>";
+  }
+
+  if (last.totalExpense > 500) {
+    g += "<div class='alert red'>⚠️ Expense high today. Tomorrow limit = ₹400.</div>";
+  } else {
+    g += "<div class='alert green'>👍 Expense under control. Tomorrow limit = ₹400–500.</div>";
+  }
+
+  if ((last.withdraw - last.totalExpense) <= 0) {
+    g += "<div class='alert red'>🛑 Balance tight. Tomorrow essentials only.</div>";
+  }
+
+  g += "<div class='alert'>🎯 Rule: Survival > Profit</div>";
+  return g;
+}
+
+/* ==== MAIN ANALYSIS ==== */
 function analyze() {
 
-  const month = document.getElementById("month").value;
-  const salary = Number(document.getElementById("salary").value);
-  const withdraw = Number(document.getElementById("withdraw").value);
-  const grocery = Number(document.getElementById("grocery").value);
-  const travel = Number(document.getElementById("travel").value);
-  const other = Number(document.getElementById("other").value);
-  const mood = document.getElementById("mood").value;
+  const month = monthEl.value;
+  const salary = +salaryEl.value;
+  const withdraw = +withdrawEl.value;
+  const grocery = +groceryEl.value;
+  const travel = +travelEl.value;
+  const other = +otherEl.value;
+  const mood = moodEl.value;
 
   const totalExpense = grocery + travel + other;
   const date = new Date().toLocaleDateString();
 
-  history.push({
+  const entry = {
     date, month, salary, withdraw,
     grocery, travel, other,
     totalExpense, mood
-  });
+  };
 
+  history.push(entry);
   localStorage.setItem("financeHistory", JSON.stringify(history));
 
-  let totalWithdraw = history.reduce((a,b)=>a+b.withdraw,0);
-  let totalExpenseAll = history.reduce((a,b)=>a+b.totalExpense,0);
-  let netBalance = totalWithdraw - totalExpenseAll;
+  const totalWithdraw = history.reduce((a,b)=>a+b.withdraw,0);
+  const totalExpenseAll = history.reduce((a,b)=>a+b.totalExpense,0);
+  const netBalance = totalWithdraw - totalExpenseAll;
 
-  // SAVE TO GOOGLE SHEET
+  /* ---- CLOUD SAVE ---- */
   fetch(CLOUD_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      date,
-      month,
-      salary,
-      withdraw,
-      grocery,
-      travel,
-      other,
-      totalExpense,
-      mood,
+    method:"POST",
+    body:JSON.stringify({
+      ...entry,
       netBalance
     })
   });
 
+  /* ---- UI MESSAGE ---- */
   let msg = "";
-  msg += `<div class='alert green'>💾 Data saved locally & to Google Sheet</div>`;
+  msg += "<div class='alert green'>💾 Saved locally & to Google Sheet</div>";
   msg += `<div class='alert'>📊 Total Withdraw: ₹${totalWithdraw}</div>`;
   msg += `<div class='alert'>💸 Total Expense: ₹${totalExpenseAll}</div>`;
   msg += `<div class='alert'>🧮 Net Balance: ₹${netBalance}</div>`;
@@ -159,21 +163,26 @@ function analyze() {
   if (month === "February" || month === "March") {
     msg += "<div class='alert yellow'>🟡 SURVIVAL MODE ACTIVE</div>";
     if (totalExpense > 500)
-      msg += "<div class='alert red'>⚠️ Daily limit crossed. Tighten tomorrow.</div>";
-    if (mood !== "ok")
-      msg += "<div class='alert red'>🧠 Mood unstable → NO TRADING NEXT DAY</div>";
-  }
-
-  if (month === "April" || month === "May" || month === "June" || month === "July") {
-    msg += "<div class='alert yellow'>🟠 TRANSITION PHASE</div>";
+      msg += "<div class='alert red'>⚠️ Daily limit crossed today.</div>";
   }
 
   if (month === "August+") {
-    msg += "<div class='alert green'>🟢 STABILITY MODE: Start SIP, Gold, Emergency Fund</div>";
+    msg += "<div class='alert green'>🟢 STABILITY MODE – Start SIP & Gold</div>";
   }
 
-  document.getElementById("result").innerHTML = msg;
+  msg += nextDayGuide(entry);
+  result.innerHTML = msg;
 }
+
+/* ==== ELEMENT SHORTCUTS ==== */
+const monthEl = document.getElementById("month");
+const salaryEl = document.getElementById("salary");
+const withdrawEl = document.getElementById("withdraw");
+const groceryEl = document.getElementById("grocery");
+const travelEl = document.getElementById("travel");
+const otherEl = document.getElementById("other");
+const moodEl = document.getElementById("mood");
+const result = document.getElementById("result");
 </script>
 
 </body>
