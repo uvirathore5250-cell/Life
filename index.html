@@ -1,113 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Survival to Stability Finance System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body {
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
-  padding: 15px;
-}
-h1 { color: #38bdf8; }
-.box {
-  background: #020617;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 10px;
-}
-label {
-  display: block;
-  margin-top: 8px;
-}
-input, select {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 6px;
-  border: none;
-}
-button {
-  margin-top: 15px;
-  padding: 10px;
-  width: 100%;
-  background: #22c55e;
-  color: black;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-}
-.alert {
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-}
-.green { background: #16a34a; }
-.yellow { background: #ca8a04; }
-.red { background: #dc2626; }
-.small {
-  font-size: 14px;
-  color: #9ca3af;
-}
-</style>
-</head>
-
-<body>
-
-<h1>💸 Survival → Stability System</h1>
-<p class="small">Designed for Feb–March crunch | April onwards recovery</p>
-
-<div class="box">
-<h3>📅 Daily Input</h3>
-
-<label>Month</label>
-<select id="month">
-  <option>February</option>
-  <option>March</option>
-  <option>April</option>
-  <option>May</option>
-  <option>June</option>
-  <option>July</option>
-  <option>August+</option>
-</select>
-
-<label>Salary received today (₹)</label>
-<input type="number" id="salary" value="0">
-
-<label>Trading Profit Withdrawn Today (₹)</label>
-<input type="number" id="withdraw" value="0">
-
-<label>Grocery Expense (₹)</label>
-<input type="number" id="grocery" value="0">
-
-<label>Travel Expense (₹)</label>
-<input type="number" id="travel" value="0">
-
-<label>Other Essential Expense (₹)</label>
-<input type="number" id="other" value="0">
-
-<label>Mood</label>
-<select id="mood">
-  <option>ok</option>
-  <option>tired</option>
-  <option>stressed</option>
-</select>
-
-<button onclick="analyze()">Analyze My Day</button>
-</div>
-
-<div class="box">
-<h3>🧠 System Guidance</h3>
-<div id="result"></div>
-</div>
-
 <script>
+let history = JSON.parse(localStorage.getItem("financeHistory")) || [];
+
 function analyze() {
 
   const month = document.getElementById("month").value;
-  const salary = Number(document.getElementById("salary").value);
   const withdraw = Number(document.getElementById("withdraw").value);
   const grocery = Number(document.getElementById("grocery").value);
   const travel = Number(document.getElementById("travel").value);
@@ -115,47 +11,49 @@ function analyze() {
   const mood = document.getElementById("mood").value;
 
   const totalExpense = grocery + travel + other;
+  const today = new Date().toLocaleDateString();
+
+  // SAVE TODAY DATA
+  history.push({
+    date: today,
+    month,
+    withdraw,
+    expense: totalExpense,
+    mood
+  });
+
+  localStorage.setItem("financeHistory", JSON.stringify(history));
+
+  // CALCULATE TOTALS
+  let totalWithdraw = history.reduce((a,b)=>a+b.withdraw,0);
+  let totalExpenseAll = history.reduce((a,b)=>a+b.expense,0);
+  let netBalance = totalWithdraw - totalExpenseAll;
+
   let messages = "";
+
+  messages += `<div class='alert green'>💾 Data Saved Successfully</div>`;
+  messages += `<div class='alert'>📊 Total Withdraw: ₹${totalWithdraw}</div>`;
+  messages += `<div class='alert'>💸 Total Expense: ₹${totalExpenseAll}</div>`;
+  messages += `<div class='alert'>🧮 Net Survival Balance: ₹${netBalance}</div>`;
 
   // FEB–MARCH LOGIC
   if (month === "February" || month === "March") {
     messages += "<div class='alert yellow'>🟡 SURVIVAL MODE ACTIVE</div>";
 
-    if (withdraw === 0) {
-      messages += "<div class='alert red'>❌ No trading withdraw today. Avoid extra expenses.</div>";
-    }
-
     if (totalExpense > 500) {
-      messages += "<div class='alert red'>⚠️ Daily expense crossed ₹500. Tighten immediately.</div>";
+      messages += "<div class='alert red'>⚠️ Aaj limit cross hui. Kal ₹400 se upar mat jaana.</div>";
     }
 
     if (mood !== "ok") {
-      messages += "<div class='alert red'>🧠 Mood not stable. NO TRADING NEXT DAY.</div>";
-    } else {
-      messages += "<div class='alert green'>✅ Discipline maintained. Keep survival focus.</div>";
+      messages += "<div class='alert red'>🧠 Mood unstable. NEXT DAY NO TRADING.</div>";
     }
   }
 
-  // APRIL–JULY LOGIC
-  if (month === "April" || month === "May" || month === "June" || month === "July") {
-    messages += "<div class='alert yellow'>🟠 TRANSITION PHASE</div>";
-
-    if (totalExpense > 1000) {
-      messages += "<div class='alert red'>⚠️ Expenses high. Remember: Papa + EMI priority.</div>";
-    } else {
-      messages += "<div class='alert green'>✅ Expenses under control.</div>";
-    }
-  }
-
-  // AUGUST+ LOGIC
+  // AUGUST LOGIC
   if (month === "August+") {
-    messages += "<div class='alert green'>🟢 STABILITY MODE STARTED</div>";
-    messages += "<div class='alert green'>✔ Start Emergency Fund, Baby SIP & Gold Plan</div>";
+    messages += "<div class='alert green'>🟢 STABILITY MODE – Start SIPs & Gold</div>";
   }
 
   document.getElementById("result").innerHTML = messages;
 }
 </script>
-
-</body>
-</html>
