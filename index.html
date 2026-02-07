@@ -1,90 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Survival Finance</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Survival Finance Log</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-  margin:0;
-  font-family: system-ui, -apple-system;
   background:#0b1020;
   color:#fff;
-}
-.container{
-  max-width:900px;
-  margin:auto;
+  font-family:system-ui, -apple-system, BlinkMacSystemFont;
+  margin:0;
   padding:20px;
 }
 .card{
-  background:#121a33;
+  background:#121a35;
   border-radius:14px;
-  padding:16px;
-  margin-bottom:16px;
+  padding:18px;
+  margin-bottom:20px;
 }
-h2{
-  margin:0 0 10px 0;
-}
+h2{margin:0 0 12px}
 input,select{
   width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:10px;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:8px;
   border:none;
-  font-size:15px;
 }
 button{
   width:100%;
   padding:14px;
-  border-radius:12px;
+  font-size:16px;
   border:none;
+  border-radius:10px;
   background:#22c55e;
   color:#000;
   font-weight:700;
-  font-size:16px;
-  margin-top:12px;
+  cursor:pointer;
 }
 .row{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
 }
-.summary{
+.badge{
   padding:10px;
-  border-radius:10px;
+  border-radius:8px;
   margin-top:8px;
 }
-.green{background:#16a34a;}
-.red{background:#dc2626;}
-.yellow{background:#ca8a04;}
-canvas{
-  max-width:100%;
-  height:220px !important;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
-td,th{
-  padding:8px;
-  border-bottom:1px solid #1f2937;
-}
+.green{background:#16a34a}
+.red{background:#dc2626}
+.yellow{background:#ca8a04}
+canvas{max-height:260px}
 </style>
 </head>
 
 <body>
-<div class="container">
 
-<!-- ================= ENTRY ================= -->
 <div class="card">
 <h2>📅 Daily Entry</h2>
 
 <input type="date" id="date">
-
 <select id="month">
   <option>January</option><option>February</option><option>March</option>
   <option>April</option><option>May</option><option>June</option>
@@ -92,164 +70,135 @@ td,th{
   <option>October</option><option>November</option><option>December</option>
 </select>
 
-<input type="number" id="salary" placeholder="Salary received today ₹">
-<input type="number" id="withdraw" placeholder="Withdraw ₹">
+<input type="number" id="salary" placeholder="Salary received today">
+<input type="number" id="withdraw" placeholder="Withdraw">
 
 <div class="row">
-  <input type="number" id="grocery" placeholder="Grocery ₹">
-  <input type="number" id="travel" placeholder="Travel ₹">
+  <input type="number" id="grocery" placeholder="Grocery">
+  <input type="number" id="travel" placeholder="Travel">
 </div>
 
-<input type="number" id="other" placeholder="Other ₹">
+<input type="number" id="other" placeholder="Other">
 
 <select id="mood">
   <option>ok</option>
-  <option>stressed</option>
   <option>tired</option>
+  <option>stressed</option>
 </select>
 
-<button onclick="saveData()">Analyze · Save · Guide</button>
+<button onclick="analyzeSaveGuide()">Analyze • Save • Guide</button>
 </div>
 
-<!-- ================= TODAY SUMMARY ================= -->
 <div class="card">
 <h2>📌 Today Summary</h2>
-<div id="todayBox"></div>
+<div id="todaySummary"></div>
+<div id="guideBox"></div>
 </div>
 
-<!-- ================= MONTH SUMMARY ================= -->
 <div class="card">
-<h2>📆 Current Month Summary</h2>
-<div id="monthBox"></div>
+<h2>📅 Current Month Summary</h2>
+<div id="monthSummary"></div>
 </div>
 
-<!-- ================= HISTORY ================= -->
 <div class="card">
-<h2>📁 History</h2>
-<table id="historyTable"></table>
+<h2>📊 Today Visual</h2>
+<canvas id="todayPie"></canvas>
+<canvas id="todayBar"></canvas>
 </div>
 
-<!-- ================= VISUAL ================= -->
 <div class="card">
-<h2>📊 Visual</h2>
-<canvas id="pieChart"></canvas>
-<canvas id="barChart"></canvas>
-</div>
-
+<h2>📊 Current Month Visual</h2>
+<canvas id="monthPie"></canvas>
+<canvas id="monthBar"></canvas>
 </div>
 
 <script>
-const API = "https://script.google.com/macros/s/AKfycbxFcD-thZfQdrrjZfiOh5Y0z7ZwONJLb7lfn_-LmCw5bB2pOyax5riGBV--pz_YhQX9EQ/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFcD-thZfQdrrjZfiOh5Y0z7ZwONJLb7lfn_-LmCw5bB2pOyax5riGBV--pz_YhQX9EQ/exec";
 
-let pieChart, barChart;
+let charts=[];
 
-// -------- SAVE DATA --------
-function saveData(){
-  const payload = {
-    date: date.value,
-    month: month.value,
-    salary: salary.value,
-    withdraw: withdraw.value,
-    grocery: grocery.value,
-    travel: travel.value,
-    other: other.value,
-    mood: mood.value
+function analyzeSaveGuide(){
+  const data={
+    date:date.value,
+    month:month.value,
+    salary:+salary.value||0,
+    withdraw:+withdraw.value||0,
+    grocery:+grocery.value||0,
+    travel:+travel.value||0,
+    other:+other.value||0,
+    mood:mood.value
   };
 
-  fetch(API,{
+  fetch(SCRIPT_URL,{
     method:"POST",
-    body:JSON.stringify(payload)
-  })
-  .then(r=>r.json())
-  .then(res=>{
-    loadData();
-    alert("Saved successfully");
+    body:JSON.stringify(data)
+  }).then(r=>r.json()).then(res=>{
+    render(res);
   });
 }
 
-// -------- LOAD DATA --------
-function loadData(){
-  fetch(API)
-  .then(r=>r.json())
-  .then(data=>{
-    if(!data.length) return;
+function render(res){
+  const t=res.today;
+  const m=res.month;
 
-    const today = data[data.length-1];
+  todaySummary.innerHTML=
+    `Withdraw ₹${t.withdraw} | Expense ₹${t.expense} | Balance ₹${t.balance}`;
 
-    todayBox.innerHTML = `
-      <div class="summary green">
-      Withdraw ₹${today.withdraw} | Expense ₹${today.totalExpense} | Balance ₹${today.netBalance}
-      </div>
-    `;
+  let guide="";
+  let cls="green";
+  if(t.expense>t.withdraw){
+    guide="⚠ Expense high. Tomorrow limit ₹"+Math.floor(t.withdraw*0.4);
+    cls="red";
+  }else{
+    guide="✅ Trading allowed (discipline)";
+  }
+  guideBox.innerHTML=`<div class="badge ${cls}">${guide}</div>
+  <div class="badge yellow">🎯 Rule: Survival > Profit</div>`;
 
-    const month = today.month;
-    const monthData = data.filter(d=>d.month===month);
+  monthSummary.innerHTML=
+    `Withdraw ₹${m.withdraw} | Expense ₹${m.expense} | Balance ₹${m.balance}`;
 
-    let mw=0, me=0;
-    monthData.forEach(d=>{
-      mw+=Number(d.withdraw);
-      me+=Number(d.totalExpense);
-    });
+  charts.forEach(c=>c.destroy());
+  charts=[];
 
-    monthBox.innerHTML = `
-      <div class="summary yellow">
-      Withdraw ₹${mw} | Expense ₹${me}
-      </div>
-    `;
-
-    renderHistory(data);
-    renderCharts(today);
-  });
-}
-
-// -------- HISTORY --------
-function renderHistory(data){
-  let html="<tr><th>Date</th><th>Month</th><th>W</th><th>E</th><th>B</th></tr>";
-  data.slice(-10).reverse().forEach(d=>{
-    html+=`<tr>
-      <td>${d.date}</td>
-      <td>${d.month}</td>
-      <td>${d.withdraw}</td>
-      <td>${d.totalExpense}</td>
-      <td>${d.netBalance}</td>
-    </tr>`;
-  });
-  historyTable.innerHTML=html;
-}
-
-// -------- CHARTS --------
-function renderCharts(d){
-  if(pieChart) pieChart.destroy();
-  if(barChart) barChart.destroy();
-
-  pieChart = new Chart(pieChartEl,{
+  charts.push(new Chart(todayPie,{
     type:"doughnut",
     data:{
       labels:["Grocery","Travel","Other"],
-      datasets:[{
-        data:[d.grocery,d.travel,d.other],
-        backgroundColor:["#22c55e","#3b82f6","#f97316"]
-      }]
+      datasets:[{data:[t.grocery,t.travel,t.other],
+      backgroundColor:["#22c55e","#3b82f6","#f97316"]}]
     }
-  });
+  }));
 
-  barChart = new Chart(barChartEl,{
+  charts.push(new Chart(todayBar,{
     type:"bar",
     data:{
       labels:["Withdraw","Expense"],
-      datasets:[{
-        data:[d.withdraw,d.totalExpense],
-        backgroundColor:["#16a34a","#dc2626"]
-      }]
+      datasets:[{data:[t.withdraw,t.expense],
+      backgroundColor:["#16a34a","#dc2626"]}]
     },
     options:{plugins:{legend:{display:false}}}
-  });
+  }));
+
+  charts.push(new Chart(monthPie,{
+    type:"doughnut",
+    data:{
+      labels:["Grocery","Travel","Other"],
+      datasets:[{data:[m.grocery,m.travel,m.other],
+      backgroundColor:["#22c55e","#3b82f6","#f97316"]}]
+    }
+  }));
+
+  charts.push(new Chart(monthBar,{
+    type:"bar",
+    data:{
+      labels:["Withdraw","Expense"],
+      datasets:[{data:[m.withdraw,m.expense],
+      backgroundColor:["#16a34a","#dc2626"]}]
+    },
+    options:{plugins:{legend:{display:false}}}
+  }));
 }
-
-const pieChartEl = document.getElementById("pieChart");
-const barChartEl = document.getElementById("barChart");
-
-loadData();
 </script>
 
 </body>
