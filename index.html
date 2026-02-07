@@ -2,255 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Survival → Stability System</title>
+<title>Survival → Stability</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: #e5e7eb;
-  padding: 15px;
+  background:#0f172a;
+  color:#e5e7eb;
+  padding:12px;
 }
-h1 { color: #38bdf8; }
-.small { font-size: 13px; color: #9ca3af; }
+h1 { color:#38bdf8; }
+.small { font-size:12px; color:#9ca3af; }
 
 .box {
-  background: #020617;
-  padding: 15px;
-  margin-bottom: 15px;
-  border-radius: 10px;
+  background:#020617;
+  padding:12px;
+  margin-bottom:12px;
+  border-radius:10px;
 }
 
-label { display:block; margin-top:8px; }
+label { margin-top:6px; display:block; }
 input, select {
   width:100%;
-  padding:8px;
-  margin-top:5px;
+  padding:7px;
   border-radius:6px;
   border:none;
+  margin-top:4px;
 }
 
 button {
-  margin-top:15px;
-  padding:12px;
+  margin-top:10px;
+  padding:10px;
   width:100%;
   background:#22c55e;
   color:black;
-  font-size:16px;
   border:none;
   border-radius:8px;
 }
 
 .alert {
-  padding:12px;
-  margin-top:10px;
-  border-radius:8px;
+  padding:8px;
+  border-radius:6px;
+  margin-top:6px;
+  font-size:14px;
 }
-.green { background:#16a34a; }
-.yellow { background:#ca8a04; }
-.red { background:#dc2626; }
+.green{background:#16a34a;}
+.red{background:#dc2626;}
+.yellow{background:#ca8a04;}
+
+table {
+  width:100%;
+  font-size:13px;
+  margin-top:8px;
+}
+td, th {
+  padding:6px;
+  border-bottom:1px solid #334155;
+}
 </style>
 </head>
 
 <body>
 
-<h1>💸 Survival → Stability System</h1>
-<p class="small">
-Safe local storage • Cloud backup • Next-day guidance  
-<br>(Refresh ke baad bhi guidance & charts dikhenge)
-</p>
+<h1>💸 Survival → Stability</h1>
+<p class="small">Daily + Current Month view • Refresh safe</p>
 
-<!-- DAILY ENTRY -->
+<!-- ENTRY -->
 <div class="box">
-<h3>📅 Daily Entry</h3>
-
 <label>Month</label>
 <select id="month">
-  <option>February</option>
-  <option>March</option>
-  <option>April</option>
-  <option>May</option>
-  <option>June</option>
-  <option>July</option>
-  <option>August+</option>
+<option>February</option><option>March</option><option>April</option>
+<option>May</option><option>June</option><option>July</option>
 </select>
 
-<label>Salary received today (₹)</label>
-<input type="number" id="salary" value="0">
+<label>Withdraw (₹)</label><input id="withdraw" type="number" value="0">
+<label>Grocery (₹)</label><input id="grocery" type="number" value="0">
+<label>Travel (₹)</label><input id="travel" type="number" value="0">
+<label>Other (₹)</label><input id="other" type="number" value="0">
 
-<label>Trading Withdraw Today (₹)</label>
-<input type="number" id="withdraw" value="0">
-
-<label>Grocery (₹)</label>
-<input type="number" id="grocery" value="0">
-
-<label>Travel (₹)</label>
-<input type="number" id="travel" value="0">
-
-<label>Other Essential (₹)</label>
-<input type="number" id="other" value="0">
-
-<label>Mood</label>
-<select id="mood">
-  <option>ok</option>
-  <option>tired</option>
-  <option>stressed</option>
-</select>
-
-<button onclick="analyze()">Analyze • Save • Guide</button>
+<button onclick="save()">Save Today</button>
 </div>
 
-<!-- GUIDANCE -->
+<!-- TODAY -->
 <div class="box">
-<h3>🧠 System Guidance</h3>
-<div id="result"></div>
+<h3>📅 Today Summary</h3>
+<div id="today"></div>
+</div>
+
+<!-- MONTH -->
+<div class="box">
+<h3>📆 Current Month Summary</h3>
+<div id="monthSummary"></div>
+<table id="monthTable"></table>
 </div>
 
 <!-- CHARTS -->
 <div class="box">
-<h3>📊 Visual Summary</h3>
-<canvas id="expensePie" height="200"></canvas>
-<br>
-<canvas id="withdrawBar" height="200"></canvas>
+<h3>📊 Visual</h3>
+<canvas id="pie" height="140"></canvas>
+<canvas id="bar" height="140"></canvas>
 </div>
 
-<!-- CHART JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-/* ================= CONFIG ================= */
+const KEY="finance_survival_v2";
+let data=JSON.parse(localStorage.getItem(KEY))||[];
+let pie,bar;
 
-const CLOUD_URL =
-"https://script.google.com/macros/s/AKfycbycZmT_n66WVFc4t3CFyo7UM7mQg1BGeKHbcE04wH3o4waopuTvcJ44JCkDloMqOyuFtg/exec";
-
-const STORAGE_KEY = "financeHistory_survival_final_v1";
-
-/* ================= STORAGE ================= */
-
-let history = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-
-/* ================= NEXT DAY GUIDE ================= */
-
-function nextDayGuide(last) {
-  let g = "<div class='alert yellow'>📅 NEXT DAY GUIDANCE</div>";
-
-  if (last.mood !== "ok") {
-    g += "<div class='alert red'>❌ NO TRADING tomorrow. Rest priority.</div>";
-  } else {
-    g += "<div class='alert green'>✅ Trading allowed (strict discipline).</div>";
-  }
-
-  if (last.totalExpense > 500) {
-    g += "<div class='alert red'>⚠️ Expense high today. Tomorrow limit = ₹400.</div>";
-  } else {
-    g += "<div class='alert green'>👍 Expense controlled. Tomorrow limit = ₹400–500.</div>";
-  }
-
-  if ((last.withdraw - last.totalExpense) <= 0) {
-    g += "<div class='alert red'>🛑 Balance tight. Essentials only tomorrow.</div>";
-  }
-
-  g += "<div class='alert'>🎯 Rule: Survival > Profit</div>";
-  return g;
-}
-
-/* ================= CHARTS ================= */
-
-let pieChart, barChart;
-
-function renderCharts(last) {
-  if (!last) return;
-
-  // PIE / DONUT
-  const pieCtx = document.getElementById("expensePie").getContext("2d");
-  if (pieChart) pieChart.destroy();
-
-  pieChart = new Chart(pieCtx, {
-    type: "doughnut",
-    data: {
-      labels: ["Grocery", "Travel", "Other"],
-      datasets: [{
-        data: [last.grocery, last.travel, last.other],
-        backgroundColor: ["#22c55e", "#3b82f6", "#f97316"]
-      }]
-    },
-    options: { plugins: { legend: { position: "bottom" } } }
-  });
-
-  // BAR
-  const barCtx = document.getElementById("withdrawBar").getContext("2d");
-  if (barChart) barChart.destroy();
-
-  barChart = new Chart(barCtx, {
-    type: "bar",
-    data: {
-      labels: ["Withdraw", "Expense"],
-      datasets: [{
-        data: [last.withdraw, last.totalExpense],
-        backgroundColor: ["#16a34a", "#dc2626"]
-      }]
-    },
-    options: { plugins: { legend: { display: false } } }
-  });
-}
-
-/* ================= MAIN ANALYZE ================= */
-
-function analyze() {
-  const entry = {
-    date: new Date().toLocaleDateString(),
-    month: month.value,
-    salary: +salary.value,
-    withdraw: +withdraw.value,
-    grocery: +grocery.value,
-    travel: +travel.value,
-    other: +other.value,
-    mood: mood.value
+function save(){
+  const e={
+    date:new Date().toLocaleDateString(),
+    month:month.value,
+    w:+withdraw.value,
+    g:+grocery.value,
+    t:+travel.value,
+    o:+other.value
   };
-
-  entry.totalExpense = entry.grocery + entry.travel + entry.other;
-
-  history.push(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-
-  fetch(CLOUD_URL, {
-    method: "POST",
-    body: JSON.stringify({ ...entry, netBalance: entry.withdraw - entry.totalExpense })
-  });
-
-  let msg = "";
-  msg += "<div class='alert green'>💾 Saved (local + Google Sheet)</div>";
-  msg += `<div class='alert'>Withdraw: ₹${entry.withdraw}</div>`;
-  msg += `<div class='alert'>Expense: ₹${entry.totalExpense}</div>`;
-  msg += `<div class='alert'>Balance: ₹${entry.withdraw - entry.totalExpense}</div>`;
-  msg += nextDayGuide(entry);
-
-  result.innerHTML = msg;
-  renderCharts(entry);
+  e.exp=e.g+e.t+e.o;
+  data.push(e);
+  localStorage.setItem(KEY,JSON.stringify(data));
+  render();
 }
 
-/* ================= LOAD LAST STATE ================= */
+function render(){
+  const today=new Date().toLocaleDateString();
+  const m=month.value;
 
-function renderLastOnLoad() {
-  if (history.length === 0) return;
-  const last = history[history.length - 1];
-  result.innerHTML = nextDayGuide(last);
-  renderCharts(last);
+  const todayData=data.filter(x=>x.date===today);
+  const monthData=data.filter(x=>x.month===m);
+
+  // TODAY
+  let t=todayData.at(-1);
+  today.innerHTML=t
+   ? `<div class="alert green">Withdraw ₹${t.w} | Expense ₹${t.exp}</div>`
+   : "No entry today";
+
+  // MONTH SUMMARY
+  let mw=0,me=0;
+  monthData.forEach(x=>{mw+=x.w;me+=x.exp;});
+  monthSummary.innerHTML=
+   `<div class="alert yellow">Withdraw ₹${mw} | Expense ₹${me}</div>`;
+
+  // TABLE
+  monthTable.innerHTML="<tr><th>Date</th><th>W</th><th>E</th></tr>"+
+   monthData.map(x=>`<tr><td>${x.date}</td><td>${x.w}</td><td>${x.exp}</td></tr>`).join("");
+
+  // CHARTS
+  if(pie)pie.destroy(); if(bar)bar.destroy();
+  pie=new Chart(pieCtx,{type:"doughnut",data:{
+    labels:["G","T","O"],
+    datasets:[{data:[t?.g||0,t?.t||0,t?.o||0],
+    backgroundColor:["#22c55e","#3b82f6","#f97316"]}]
+  }});
+  bar=new Chart(barCtx,{type:"bar",data:{
+    labels:["Withdraw","Expense"],
+    datasets:[{data:[mw,me],backgroundColor:["#16a34a","#dc2626"]}]
+  }});
 }
 
-window.onload = renderLastOnLoad;
-
-/* ================= ELEMENTS ================= */
-
-const month = document.getElementById("month");
-const salary = document.getElementById("salary");
-const withdraw = document.getElementById("withdraw");
-const grocery = document.getElementById("grocery");
-const travel = document.getElementById("travel");
-const other = document.getElementById("other");
-const mood = document.getElementById("mood");
-const result = document.getElementById("result");
+const pieCtx=document.getElementById("pie");
+const barCtx=document.getElementById("bar");
+window.onload=render;
 </script>
 
 </body>
