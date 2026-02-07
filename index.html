@@ -1,230 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Survival → Stability System</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
-body{
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#0b1020;
-  color:#fff;
-}
-.container{max-width:900px;margin:auto;padding:15px}
-h2,h3{margin:10px 0}
-.box{
-  background:#121a35;
-  border-radius:12px;
-  padding:15px;
-  margin-bottom:15px;
-}
-input,select,button{
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border-radius:8px;
-  border:none;
-  font-size:15px;
-}
-button{
-  background:#22c55e;
-  color:#000;
-  font-weight:bold;
-}
-.alert{padding:10px;border-radius:8px;margin-top:8px}
-.green{background:#16a34a}
-.red{background:#dc2626}
-.yellow{background:#ca8a04}
-
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:8px;border-bottom:1px solid #2a355f;text-align:center}
-
-.chart-box{
-  max-width:320px;
-  margin:15px auto;
-}
-canvas{background:#0b1020;border-radius:10px}
-hr{border:1px solid #1f2a50;margin:15px 0}
+  :root{
+    --bg:#0b1220;
+    --card:#121a2f;
+    --muted:#9aa3b2;
+    --green:#22c55e;
+    --red:#ef4444;
+    --amber:#f59e0b;
+    --blue:#3b82f6;
+    --orange:#fb923c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:#e5e7eb;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:16px}
+  h1{margin:6px 0 12px; font-size:22px}
+  .sub{color:var(--muted); font-size:13px}
+  .grid{display:grid; grid-template-columns:1fr; gap:14px}
+  .card{
+    background:linear-gradient(180deg,#121a2f,#0f1730);
+    border-radius:14px; padding:14px;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  label{font-size:12px; color:var(--muted)}
+  input,select,button{
+    width:100%; padding:10px 12px; border-radius:10px;
+    border:1px solid #1f2a4d; background:#0b132b; color:#e5e7eb;
+    outline:none;
+  }
+  .row{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
+  .row3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  button{
+    background:var(--green); color:#052e16; font-weight:700; border:none;
+    cursor:pointer;
+  }
+  .pill{
+    padding:8px 10px; border-radius:10px; font-size:13px; font-weight:600;
+  }
+  .ok{background:#063d1e; color:#86efac}
+  .warn{background:#3b2a00; color:#fde68a}
+  .bad{background:#3b0a0a; color:#fecaca}
+  table{width:100%; border-collapse:collapse}
+  th,td{padding:8px; border-bottom:1px solid #1f2a4d; font-size:13px}
+  th{color:var(--muted); text-align:left}
+  .charts{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .chartbox{
+    background:#0b132b; border-radius:12px; padding:10px;
+  }
+  .chartbox h4{margin:4px 0 8px; font-size:14px; color:#c7d2fe}
+  canvas{max-width:100%; height:220px !important}
+  .donut{height:260px !important}
+  .footer{color:var(--muted); font-size:12px; margin-top:6px}
 </style>
 </head>
 
 <body>
-<div class="container">
+<div class="wrap">
+  <h1>💸 Survival → Stability System</h1>
+  <div class="sub">Daily log • Local memory • Google Sheet backup • Next-day guidance</div>
 
-<h2>💰 Survival → Stability System</h2>
+  <!-- ENTRY -->
+  <div class="card grid">
+    <h3>📅 Daily Entry</h3>
+    <div class="row">
+      <div>
+        <label>Month</label>
+        <select id="month">
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+      <div>
+        <label>Salary received today (₹)</label>
+        <input id="salary" type="number" value="0"/>
+      </div>
+    </div>
+    <div class="row3">
+      <div>
+        <label>Trading Withdraw Today (₹)</label>
+        <input id="withdraw" type="number" value="0"/>
+      </div>
+      <div>
+        <label>Grocery (₹)</label>
+        <input id="grocery" type="number" value="0"/>
+      </div>
+      <div>
+        <label>Travel (₹)</label>
+        <input id="travel" type="number" value="0"/>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Other Essential (₹)</label>
+        <input id="other" type="number" value="0"/>
+      </div>
+      <div>
+        <label>Mood</label>
+        <select id="mood">
+          <option>ok</option><option>tired</option><option>stressed</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="saveToday()">Analyze • Save • Guide</button>
+  </div>
 
-<!-- DAILY ENTRY -->
-<div class="box">
-<h3>📅 Daily Entry</h3>
+  <!-- TODAY SUMMARY -->
+  <div class="card">
+    <h3>📌 Today Summary</h3>
+    <div id="todayLine" class="pill ok">—</div>
+    <div id="advice" class="pill warn" style="margin-top:8px">—</div>
+  </div>
 
-<select id="month">
-<option>January</option><option>February</option><option>March</option>
-<option>April</option><option>May</option><option>June</option>
-<option>July</option><option>August</option><option>September</option>
-<option>October</option><option>November</option><option>December</option>
-</select>
+  <!-- CURRENT MONTH SUMMARY -->
+  <div class="card">
+    <h3>🗓️ Current Month Summary</h3>
+    <div id="monthLine" class="pill warn">—</div>
+    <table>
+      <thead><tr><th>Date</th><th>W</th><th>E</th><th>B</th></tr></thead>
+      <tbody id="monthRows"></tbody>
+    </table>
+  </div>
 
-<input id="salary" type="number" placeholder="Salary received today (₹)">
-<input id="withdraw" type="number" placeholder="Trading Withdraw Today (₹)">
-<input id="grocery" type="number" placeholder="Grocery (₹)">
-<input id="travel" type="number" placeholder="Travel (₹)">
-<input id="other" type="number" placeholder="Other Essential (₹)">
+  <!-- HISTORY -->
+  <div class="card">
+    <h3>🗂️ History (All)</h3>
+    <table>
+      <thead><tr><th>Date</th><th>Month</th><th>W</th><th>E</th><th>B</th></tr></thead>
+      <tbody id="allRows"></tbody>
+    </table>
+  </div>
 
-<select id="mood">
-<option value="ok">ok</option>
-<option value="tired">tired</option>
-<option value="stressed">stressed</option>
-</select>
+  <!-- VISUALS -->
+  <div class="card">
+    <h3>📊 Today Visual</h3>
+    <div class="charts">
+      <div class="chartbox">
+        <h4>Expense Split (Today)</h4>
+        <canvas id="donutToday" class="donut"></canvas>
+      </div>
+      <div class="chartbox">
+        <h4>Withdraw vs Expense (Today)</h4>
+        <canvas id="barToday"></canvas>
+      </div>
+    </div>
+  </div>
 
-<button onclick="saveToday()">Analyze • Save • Guide</button>
-</div>
+  <div class="card">
+    <h3>📊 Current Month Visual</h3>
+    <div class="charts">
+      <div class="chartbox">
+        <h4>Expense Split (Month)</h4>
+        <canvas id="donutMonth" class="donut"></canvas>
+      </div>
+      <div class="chartbox">
+        <h4>Withdraw vs Expense (Month)</h4>
+        <canvas id="barMonth"></canvas>
+      </div>
+    </div>
+  </div>
 
-<!-- TODAY SUMMARY -->
-<div class="box">
-<h3>📌 Today Summary</h3>
-<div id="todayBox">No entry today</div>
-</div>
-
-<!-- CURRENT MONTH -->
-<div class="box">
-<h3>📅 Current Month Summary</h3>
-<div id="monthSummary" class="alert yellow">No data</div>
-<table>
-<thead><tr><th>Date</th><th>W</th><th>E</th><th>B</th></tr></thead>
-<tbody id="monthTable"></tbody>
-</table>
-</div>
-
-<!-- HISTORY -->
-<div class="box">
-<h3>📂 History (All)</h3>
-<table>
-<thead><tr><th>Date</th><th>Month</th><th>W</th><th>E</th><th>B</th></tr></thead>
-<tbody id="historyTable"></tbody>
-</table>
-</div>
-
-<!-- VISUALS -->
-<div class="box">
-<h3>📊 Today Visual</h3>
-<div class="chart-box"><canvas id="dayPie"></canvas></div>
-<div class="chart-box"><canvas id="dayBar"></canvas></div>
-
-<hr>
-
-<h3>📊 Current Month Visual</h3>
-<div class="chart-box"><canvas id="monthPie"></canvas></div>
-<div class="chart-box"><canvas id="monthBar"></canvas></div>
-</div>
-
+  <div class="footer">Rule: Survival &gt; Profit</div>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("financeData")) || [];
-let dayPie, dayBar, monthPie, monthBar;
+/* ===== CONFIG ===== */
+const STORAGE_KEY = 'financeData';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbycZmT_n66WVFc4t3CFyo7UM7mQg1BGeKHbcE04wH3o4waopuTvcJ44JCkDloMqOyuFtg/exec';
 
+/* ===== UTILS ===== */
+const ₹ = n => '₹' + (Number(n)||0);
+const todayStr = () => {
+  const d=new Date(); return d.toLocaleDateString('en-GB');
+};
+const getData = () => JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+const setData = d => localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+const sum = (arr, k) => arr.reduce((a,b)=>a+(Number(b[k])||0),0);
+
+/* ===== SAVE ===== */
 function saveToday(){
-  const d = new Date();
-  const entry = {
-    date: d.toLocaleDateString("en-GB"),
-    month: month.value,
-    salary:+salary.value||0,
-    withdraw:+withdraw.value||0,
-    grocery:+grocery.value||0,
-    travel:+travel.value||0,
-    other:+other.value||0,
-    mood:mood.value
+  const rec = {
+    date: todayStr(),
+    month: document.getElementById('month').value,
+    salary: +document.getElementById('salary').value||0,
+    withdraw: +document.getElementById('withdraw').value||0,
+    grocery: +document.getElementById('grocery').value||0,
+    travel: +document.getElementById('travel').value||0,
+    other: +document.getElementById('other').value||0,
+    mood: document.getElementById('mood').value
   };
-  entry.exp = entry.grocery+entry.travel+entry.other;
-  entry.balance = entry.withdraw - entry.exp;
-  data.push(entry);
-  localStorage.setItem("financeData",JSON.stringify(data));
+  rec.totalExpense = rec.grocery + rec.travel + rec.other;
+  rec.balance = rec.withdraw - rec.totalExpense;
+
+  const all = getData();
+  all.push(rec);
+  setData(all);
+
+  // send to sheet (order must match header)
+  fetch(SHEET_URL,{
+    method:'POST', mode:'no-cors',
+    body: new URLSearchParams({
+      Date: rec.date,
+      Month: rec.month,
+      Salary: rec.salary,
+      Withdraw: rec.withdraw,
+      Grocery: rec.grocery,
+      Travel: rec.travel,
+      Other: rec.other,
+      Total_Expense: rec.totalExpense,
+      Mood: rec.mood,
+      Net_Balance: rec.balance
+    })
+  }).catch(()=>{});
+
   render();
 }
 
-function detailedReport(e){
-  let m=`<div class="alert green">
-  Withdraw ₹${e.withdraw} | Expense ₹${e.exp} | Balance ₹${e.balance}</div>`;
-  m+= e.exp>500
-    ? `<div class="alert red">⚠ Expense high. Tomorrow limit ₹400</div>`
-    : `<div class="alert green">👍 Expense under control</div>`;
-  m+= e.mood!=="ok"
-    ? `<div class="alert red">🧠 Mood low – avoid risk</div>`
-    : `<div class="alert green">✅ Trading allowed (discipline)</div>`;
-  m+= `<div class="alert yellow">🎯 Rule: Survival > Profit</div>`;
-  return m;
-}
+/* ===== RENDER ===== */
+let donutToday, barToday, donutMonth, barMonth;
 
 function render(){
-  if(!data.length) return;
-  const today=data[data.length-1];
-  todayBox.innerHTML=detailedReport(today);
+  const all = getData();
+  const today = all.filter(r=>r.date===todayStr()).slice(-1)[0];
 
-  const m=data.filter(x=>x.month===today.month);
-  const mw=m.reduce((s,x)=>s+x.withdraw,0);
-  const me=m.reduce((s,x)=>s+x.exp,0);
+  // Today summary
+  if(today){
+    document.getElementById('todayLine').className = 'pill ok';
+    document.getElementById('todayLine').textContent =
+      `Withdraw ${₹(today.withdraw)} | Expense ${₹(today.totalExpense)} | Balance ${₹(today.balance)}`;
+    document.getElementById('advice').className = 'pill ' + (today.totalExpense>800?'bad':'warn');
+    document.getElementById('advice').textContent =
+      today.totalExpense>800 ? '⚠ Expense high. Tomorrow limit ₹400' : '✅ Discipline OK. Trade carefully';
+  }else{
+    document.getElementById('todayLine').textContent='—';
+    document.getElementById('advice').textContent='—';
+  }
 
-  monthSummary.innerHTML=`Salary ₹${m.reduce((s,x)=>s+x.salary,0)}
-  | Withdraw ₹${mw} | Expense ₹${me}`;
+  // Month filter
+  const m = document.getElementById('month').value;
+  const monthData = all.filter(r=>r.month===m);
 
-  monthTable.innerHTML="";
-  m.forEach(x=>{
-    monthTable.innerHTML+=
-    `<tr><td>${x.date}</td><td>${x.withdraw}</td><td>${x.exp}</td><td>${x.balance}</td></tr>`;
+  // Month summary line
+  document.getElementById('monthLine').textContent =
+    `Salary ${₹(sum(monthData,'salary'))} | Withdraw ${₹(sum(monthData,'withdraw'))} | Expense ${₹(sum(monthData,'totalExpense'))}`;
+
+  // Tables
+  document.getElementById('monthRows').innerHTML = monthData.map(r =>
+    `<tr><td>${r.date}</td><td>${₹(r.withdraw)}</td><td>${₹(r.totalExpense)}</td><td>${₹(r.balance)}</td></tr>`
+  ).join('');
+
+  document.getElementById('allRows').innerHTML = all.map(r =>
+    `<tr><td>${r.date}</td><td>${r.month}</td><td>${₹(r.withdraw)}</td><td>${₹(r.totalExpense)}</td><td>${₹(r.balance)}</td></tr>`
+  ).join('');
+
+  // Charts data
+  const t = today || {grocery:0,travel:0,other:0,withdraw:0,totalExpense:0};
+  const mAgg = {
+    grocery: sum(monthData,'grocery'),
+    travel: sum(monthData,'travel'),
+    other: sum(monthData,'other'),
+    withdraw: sum(monthData,'withdraw'),
+    totalExpense: sum(monthData,'totalExpense')
+  };
+
+  // Destroy old
+  [donutToday,barToday,donutMonth,barMonth].forEach(c=>c&&c.destroy());
+
+  donutToday = new Chart(document.getElementById('donutToday'),{
+    type:'doughnut',
+    data:{labels:['Grocery','Travel','Other'],
+      datasets:[{data:[t.grocery,t.travel,t.other], backgroundColor:['#22c55e','#3b82f6','#fb923c']}]},
+    options:{responsive:true, plugins:{legend:{labels:{color:'#e5e7eb'}}}}
   });
 
-  historyTable.innerHTML="";
-  data.forEach(x=>{
-    historyTable.innerHTML+=
-    `<tr><td>${x.date}</td><td>${x.month}</td><td>${x.withdraw}</td><td>${x.exp}</td><td>${x.balance}</td></tr>`;
+  barToday = new Chart(document.getElementById('barToday'),{
+    type:'bar',
+    data:{labels:['Withdraw','Expense'],
+      datasets:[{data:[t.withdraw,t.totalExpense], backgroundColor:['#22c55e','#ef4444']}]},
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{color:'#e5e7eb'}}, x:{ticks:{color:'#e5e7eb'}}}}
   });
 
-  drawCharts(today,mw,me,m);
+  donutMonth = new Chart(document.getElementById('donutMonth'),{
+    type:'doughnut',
+    data:{labels:['Grocery','Travel','Other'],
+      datasets:[{data:[mAgg.grocery,mAgg.travel,mAgg.other], backgroundColor:['#22c55e','#3b82f6','#fb923c']}]},
+    options:{responsive:true, plugins:{legend:{labels:{color:'#e5e7eb'}}}}
+  });
+
+  barMonth = new Chart(document.getElementById('barMonth'),{
+    type:'bar',
+    data:{labels:['Withdraw','Expense'],
+      datasets:[{data:[mAgg.withdraw,mAgg.totalExpense], backgroundColor:['#22c55e','#ef4444']}]},
+    options:{responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{color:'#e5e7eb'}}, x:{ticks:{color:'#e5e7eb'}}}}
+  });
 }
 
-function drawCharts(t,mw,me,m){
-  if(dayPie) dayPie.destroy();
-  if(dayBar) dayBar.destroy();
-  if(monthPie) monthPie.destroy();
-  if(monthBar) monthBar.destroy();
-
-  dayPie=new Chart(dayPieCtx,{type:"doughnut",
-    data:{labels:["Grocery","Travel","Other"],
-    datasets:[{data:[t.grocery,t.travel,t.other],
-    backgroundColor:["#22c55e","#3b82f6","#f97316"]}]},
-    options:{responsive:true,maintainAspectRatio:false}});
-
-  dayBar=new Chart(dayBarCtx,{type:"bar",
-    data:{labels:["Withdraw","Expense"],
-    datasets:[{data:[t.withdraw,t.exp],
-    backgroundColor:["#22c55e","#dc2626"]}]},
-    options:{responsive:true,maintainAspectRatio:false}});
-
-  const mg=m.reduce((s,x)=>s+x.grocery,0);
-  const mt=m.reduce((s,x)=>s+x.travel,0);
-  const mo=m.reduce((s,x)=>s+x.other,0);
-
-  monthPie=new Chart(monthPieCtx,{type:"doughnut",
-    data:{labels:["Grocery","Travel","Other"],
-    datasets:[{data:[mg,mt,mo],
-    backgroundColor:["#22c55e","#3b82f6","#f97316"]}]},
-    options:{responsive:true,maintainAspectRatio:false}});
-
-  monthBar=new Chart(monthBarCtx,{type:"bar",
-    data:{labels:["Withdraw","Expense"],
-    datasets:[{data:[mw,me],
-    backgroundColor:["#22c55e","#dc2626"]}]},
-    options:{responsive:true,maintainAspectRatio:false}});
-}
-
-const dayPieCtx=document.getElementById("dayPie");
-const dayBarCtx=document.getElementById("dayBar");
-const monthPieCtx=document.getElementById("monthPie");
-const monthBarCtx=document.getElementById("monthBar");
-
-window.onload=render;
+render();
 </script>
 </body>
 </html>
