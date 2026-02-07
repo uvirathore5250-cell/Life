@@ -1,179 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Survival → Stability System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Survival Finance</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
   margin:0;
-  font-family:system-ui, -apple-system;
-  background:#0b1220;
+  font-family: system-ui, -apple-system;
+  background:#0b1020;
   color:#fff;
 }
-.container{max-width:900px;margin:auto;padding:16px}
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:20px;
+}
 .card{
-  background:#121b33;
-  border-radius:12px;
+  background:#121a33;
+  border-radius:14px;
   padding:16px;
   margin-bottom:16px;
 }
-h2{margin:0 0 12px}
-input,select,button{
+h2{
+  margin:0 0 10px 0;
+}
+input,select{
   width:100%;
-  padding:10px;
-  border-radius:8px;
+  padding:12px;
+  margin-top:8px;
+  border-radius:10px;
   border:none;
-  margin-bottom:10px;
+  font-size:15px;
 }
 button{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
   background:#22c55e;
   color:#000;
   font-weight:700;
-  cursor:pointer;
+  font-size:16px;
+  margin-top:12px;
 }
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.badge{padding:10px;border-radius:8px;margin-bottom:8px}
-.green{background:#16a34a}
-.red{background:#dc2626}
-.yellow{background:#ca8a04}
-canvas{max-width:100%;height:220px!important}
-table{width:100%;border-collapse:collapse}
-td,th{border-bottom:1px solid #1f2a44;padding:8px;text-align:center}
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.summary{
+  padding:10px;
+  border-radius:10px;
+  margin-top:8px;
+}
+.green{background:#16a34a;}
+.red{background:#dc2626;}
+.yellow{background:#ca8a04;}
+canvas{
+  max-width:100%;
+  height:220px !important;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+td,th{
+  padding:8px;
+  border-bottom:1px solid #1f2937;
+}
 </style>
 </head>
 
 <body>
 <div class="container">
 
-<!-- ENTRY -->
+<!-- ================= ENTRY ================= -->
 <div class="card">
 <h2>📅 Daily Entry</h2>
 
 <input type="date" id="date">
+
 <select id="month">
-<option>January</option><option>February</option><option>March</option>
-<option>April</option><option>May</option><option>June</option>
-<option>July</option><option>August</option><option>September</option>
-<option>October</option><option>November</option><option>December</option>
+  <option>January</option><option>February</option><option>March</option>
+  <option>April</option><option>May</option><option>June</option>
+  <option>July</option><option>August</option><option>September</option>
+  <option>October</option><option>November</option><option>December</option>
 </select>
 
-<input id="salary" type="number" placeholder="Salary received today">
-<input id="withdraw" type="number" placeholder="Trading Withdraw">
-<input id="grocery" type="number" placeholder="Grocery">
-<input id="travel" type="number" placeholder="Travel">
-<input id="other" type="number" placeholder="Other">
-<select id="mood">
-<option>ok</option><option>stressed</option><option>tired</option>
-</select>
+<input type="number" id="salary" placeholder="Salary received today ₹">
+<input type="number" id="withdraw" placeholder="Withdraw ₹">
 
-<button onclick="saveData()">Analyze • Save • Guide</button>
+<div class="row">
+  <input type="number" id="grocery" placeholder="Grocery ₹">
+  <input type="number" id="travel" placeholder="Travel ₹">
 </div>
 
-<!-- TODAY SUMMARY -->
+<input type="number" id="other" placeholder="Other ₹">
+
+<select id="mood">
+  <option>ok</option>
+  <option>stressed</option>
+  <option>tired</option>
+</select>
+
+<button onclick="saveData()">Analyze · Save · Guide</button>
+</div>
+
+<!-- ================= TODAY SUMMARY ================= -->
 <div class="card">
 <h2>📌 Today Summary</h2>
-<div id="todaySummary"></div>
+<div id="todayBox"></div>
 </div>
 
-<!-- MONTH SUMMARY -->
+<!-- ================= MONTH SUMMARY ================= -->
 <div class="card">
-<h2>📅 Current Month Summary</h2>
-<div id="monthSummary"></div>
-<table id="monthTable"></table>
+<h2>📆 Current Month Summary</h2>
+<div id="monthBox"></div>
 </div>
 
-<!-- VISUAL -->
+<!-- ================= HISTORY ================= -->
+<div class="card">
+<h2>📁 History</h2>
+<table id="historyTable"></table>
+</div>
+
+<!-- ================= VISUAL ================= -->
 <div class="card">
 <h2>📊 Visual</h2>
-<canvas id="pie"></canvas>
-<canvas id="bar"></canvas>
+<canvas id="pieChart"></canvas>
+<canvas id="barChart"></canvas>
 </div>
 
 </div>
 
 <script>
-const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzgLzec9RnzGaSNihHebDuD2AEJS40GRUj0lfBqaGFk4zxTugxV4Q-pOdqx6JlGYgLyGg/exec";
+const API = "https://script.google.com/macros/s/AKfycbxFcD-thZfQdrrjZfiOh5Y0z7ZwONJLb7lfn_-LmCw5bB2pOyax5riGBV--pz_YhQX9EQ/exec";
 
-let pieChart, barChart, allData=[];
+let pieChart, barChart;
 
-async function fetchData(){
-  const r=await fetch(SCRIPT_URL);
-  allData=await r.json();
-  render();
-}
-fetchData();
-
+// -------- SAVE DATA --------
 function saveData(){
-  const payload={
-    date:date.value,
-    month:month.value,
-    salary:+salary.value||0,
-    withdraw:+withdraw.value||0,
-    grocery:+grocery.value||0,
-    travel:+travel.value||0,
-    other:+other.value||0,
-    mood:mood.value
+  const payload = {
+    date: date.value,
+    month: month.value,
+    salary: salary.value,
+    withdraw: withdraw.value,
+    grocery: grocery.value,
+    travel: travel.value,
+    other: other.value,
+    mood: mood.value
   };
-  fetch(SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)})
-  .then(()=>fetchData());
-}
 
-function render(){
-  if(!allData.length) return;
-  const today=allData[allData.length-1];
-
-  const expense=today.grocery+today.travel+today.other;
-  const balance=today.withdraw-expense;
-
-  todaySummary.innerHTML=`
-  <div class="badge green">Withdraw ₹${today.withdraw} | Expense ₹${expense} | Balance ₹${balance}</div>
-  ${expense>500?'<div class="badge red">Expense high. Tomorrow limit ₹400</div>':''}
-  <div class="badge yellow">Rule: Survival > Profit</div>`;
-
-  const monthName=today.month;
-  const monthData=allData.filter(d=>d.month===monthName);
-
-  let mw=0,me=0;
-  monthTable.innerHTML="<tr><th>Date</th><th>W</th><th>E</th><th>B</th></tr>";
-  monthData.forEach(d=>{
-    const e=d.grocery+d.travel+d.other;
-    mw+=d.withdraw; me+=e;
-    monthTable.innerHTML+=`<tr><td>${d.date}</td><td>${d.withdraw}</td><td>${e}</td><td>${d.withdraw-e}</td></tr>`;
+  fetch(API,{
+    method:"POST",
+    body:JSON.stringify(payload)
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    loadData();
+    alert("Saved successfully");
   });
-
-  monthSummary.innerHTML=
-  `<div class="badge yellow">Withdraw ₹${mw} | Expense ₹${me}</div>`;
-
-  drawCharts(today);
 }
 
-function drawCharts(d){
+// -------- LOAD DATA --------
+function loadData(){
+  fetch(API)
+  .then(r=>r.json())
+  .then(data=>{
+    if(!data.length) return;
+
+    const today = data[data.length-1];
+
+    todayBox.innerHTML = `
+      <div class="summary green">
+      Withdraw ₹${today.withdraw} | Expense ₹${today.totalExpense} | Balance ₹${today.netBalance}
+      </div>
+    `;
+
+    const month = today.month;
+    const monthData = data.filter(d=>d.month===month);
+
+    let mw=0, me=0;
+    monthData.forEach(d=>{
+      mw+=Number(d.withdraw);
+      me+=Number(d.totalExpense);
+    });
+
+    monthBox.innerHTML = `
+      <div class="summary yellow">
+      Withdraw ₹${mw} | Expense ₹${me}
+      </div>
+    `;
+
+    renderHistory(data);
+    renderCharts(today);
+  });
+}
+
+// -------- HISTORY --------
+function renderHistory(data){
+  let html="<tr><th>Date</th><th>Month</th><th>W</th><th>E</th><th>B</th></tr>";
+  data.slice(-10).reverse().forEach(d=>{
+    html+=`<tr>
+      <td>${d.date}</td>
+      <td>${d.month}</td>
+      <td>${d.withdraw}</td>
+      <td>${d.totalExpense}</td>
+      <td>${d.netBalance}</td>
+    </tr>`;
+  });
+  historyTable.innerHTML=html;
+}
+
+// -------- CHARTS --------
+function renderCharts(d){
   if(pieChart) pieChart.destroy();
   if(barChart) barChart.destroy();
 
-  pieChart=new Chart(pie,{
+  pieChart = new Chart(pieChartEl,{
     type:"doughnut",
     data:{
       labels:["Grocery","Travel","Other"],
-      datasets:[{data:[d.grocery,d.travel,d.other],
-      backgroundColor:["#22c55e","#3b82f6","#f97316"]}]
+      datasets:[{
+        data:[d.grocery,d.travel,d.other],
+        backgroundColor:["#22c55e","#3b82f6","#f97316"]
+      }]
     }
   });
 
-  barChart=new Chart(bar,{
+  barChart = new Chart(barChartEl,{
     type:"bar",
     data:{
       labels:["Withdraw","Expense"],
-      datasets:[{data:[d.withdraw,d.grocery+d.travel+d.other],
-      backgroundColor:["#16a34a","#dc2626"]}]
+      datasets:[{
+        data:[d.withdraw,d.totalExpense],
+        backgroundColor:["#16a34a","#dc2626"]
+      }]
     },
     options:{plugins:{legend:{display:false}}}
   });
 }
+
+const pieChartEl = document.getElementById("pieChart");
+const barChartEl = document.getElementById("barChart");
+
+loadData();
 </script>
+
 </body>
 </html>
